@@ -1,0 +1,35 @@
+# FastAPI Backend
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-dotenv==1.0.0
+
+# Database
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+
+# LangChain - LCEL (RunnableSequence + with_retry) orchestrates the
+# coordinator pipeline; ChatOpenAI + structured output for content generation
+langchain>=0.3
+langchain-openai>=0.2
+
+# langgraph itself isn't imported by the app anymore (the coordinator pipeline
+# is plain LCEL, no graph/branching needed) - kept only because
+# tests/test_step1_setup.py's setup-verification tutorial checks for it
+langgraph>=0.2
+
+# MCP (Model Context Protocol) - real client/server, not just the @tool decorator
+# Pinned <2.0: mcp 2.0 renamed FastMCP -> MCPServer and restructured modules;
+# 1.x is the documented, widely-recognized FastMCP API.
+mcp[cli]>=1.2,<2.0
+langchain-mcp-adapters>=0.1
+
+# LLM Providers
+openai>=1.6.1  # Updated: langchain-openai requires >=1.6.1
+
+# Image Processing
+Pillow==10.1.0
+requests==2.31.0
+
+# Utilities
+pydantic>=2.7.4
+
