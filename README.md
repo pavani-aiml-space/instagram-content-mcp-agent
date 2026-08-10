@@ -9,17 +9,17 @@ A multi-agent app that generates and posts Instagram content from a topic: an LL
 ```
 React Frontend (frontend/)
     ↓
-FastAPI Backend (backend/) — POST /api/content/generate-and-post
+FastAPI Backend (backend/): POST /api/content/generate-and-post
     ↓
-Coordinator Agent (agents/coordinator_agent.py) — LangChain LCEL chain
+Coordinator Agent (agents/coordinator_agent.py): LangChain LCEL chain
     ↓ opens one MCP session (agents/mcp_client.py)
-mcp_server/instagram_tools_server.py — a real MCP server (stdio transport)
+mcp_server/instagram_tools_server.py: a real MCP server (stdio transport)
     ├─ generate_content   → tools/content_generator.py (ChatOpenAI, structured output)
     ├─ generate_image     → tools/image_generator.py (Stability AI / OpenAI Images)
     └─ post_to_instagram  → tools/instagram_poster.py (Instagram Graph API)
 ```
 
-The three agents (`agents/content_creator_agent.py`, `agents/image_generator_agent.py`, `agents/instagram_poster_agent.py`) each call one MCP tool over a real client/server boundary — not an in-process function call. The Coordinator Agent chains them with LangChain Expression Language (LCEL, the `|` operator) rather than a graph framework — the flow is strictly linear (content → image → post), and each step gets `.with_retry()` for free, retrying once on a transient API failure before recording it.
+The three agents (`agents/content_creator_agent.py`, `agents/image_generator_agent.py`, `agents/instagram_poster_agent.py`) each call one MCP tool over a real client/server boundary, not an in-process function call. The Coordinator Agent chains them with LangChain Expression Language (LCEL, the `|` operator) rather than a graph framework, the flow is strictly linear (content → image → post), and each step gets `.with_retry()` for free, retrying once on a transient API failure before recording it.
 
 Requests and generated posts are persisted via SQLAlchemy (`database/`) to Postgres.
 
@@ -36,12 +36,12 @@ Requests and generated posts are persisted via SQLAlchemy (`database/`) to Postg
    pip install -r requirements.txt
    ```
 
-2. **Configure environment variables** — create a `.env` file in the project root with:
-   - `OPENAI_API_KEY` — content generation
-   - `STABILITY_API_KEY` — image generation (default provider)
-   - `INSTAGRAM_ACCESS_TOKEN`, `INSTAGRAM_ACCOUNT_ID` — Instagram Graph API (see [docs/INSTAGRAM_SETUP_GUIDE.md](docs/INSTAGRAM_SETUP_GUIDE.md))
-   - `DATABASE_URL` — Postgres connection string
-   - `PUBLIC_IMAGE_SERVER_URL` — public URL for generated images (Instagram requires a public HTTPS image URL; see [docs/NGROK_SETUP.md](docs/NGROK_SETUP.md))
+2. **Configure environment variables**: create a `.env` file in the project root with:
+   - `OPENAI_API_KEY`: content generation
+   - `STABILITY_API_KEY`: image generation (default provider)
+   - `INSTAGRAM_ACCESS_TOKEN`, `INSTAGRAM_ACCOUNT_ID`: Instagram Graph API (see [docs/INSTAGRAM_SETUP_GUIDE.md](docs/INSTAGRAM_SETUP_GUIDE.md))
+   - `DATABASE_URL`: Postgres connection string
+   - `PUBLIC_IMAGE_SERVER_URL`: public URL for generated images (Instagram requires a public HTTPS image URL; see [docs/NGROK_SETUP.md](docs/NGROK_SETUP.md))
 
 3. **Set up the database:**
    ```bash
@@ -74,7 +74,7 @@ Requests and generated posts are persisted via SQLAlchemy (`database/`) to Postg
    ```
    http://localhost:5173
 
-The backend spawns `mcp_server/instagram_tools_server.py` as a subprocess automatically per request — no separate step needed to run it.
+The backend spawns `mcp_server/instagram_tools_server.py` as a subprocess automatically per request, no separate step needed to run it.
 
 ---
 
@@ -99,7 +99,7 @@ backend/      FastAPI app, routes, Pydantic request/response models
 database/     SQLAlchemy models and connection
 frontend/     React + Vite client
 scripts/      Setup and dev-environment helpers (DB setup, Instagram credentials, image server/tunnel)
-docs/         Architecture and setup docs (docs/archive/ holds superseded planning docs)
+docs/         Architecture and setup docs
 ```
 
 ---

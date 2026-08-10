@@ -32,3 +32,6 @@ __pycache__/
 # Generated at runtime - not source
 assets/
 tmp/
+
+# Superseded planning docs, kept locally, not published
+.archive-local/
