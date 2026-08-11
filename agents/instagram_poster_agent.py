@@ -13,6 +13,7 @@ async def run_instagram_poster(
     instagram_account_id: str,
     tool: BaseTool,
     dry_run: bool = False,
+    format: str = "post",
 ) -> dict:
     """
     Run the Instagram Poster Agent - calls the "post_to_instagram" tool
@@ -24,6 +25,9 @@ async def run_instagram_poster(
         instagram_account_id: Instagram Business Account ID
         tool: The "post_to_instagram" MCP tool (loaded via agents/mcp_client.py)
         dry_run: If True, validates/logs without publishing to the real account
+        format: "post" or "story" (mapped to the Graph API's media_type field
+            server-side; "reel" is rejected since this pipeline only produces
+            a static image, not a video)
 
     Returns:
         Dictionary with post_id, permalink, status, error
@@ -34,6 +38,7 @@ async def run_instagram_poster(
             "caption": caption,
             "instagram_account_id": instagram_account_id,
             "dry_run": dry_run,
+            "format": format,
         })
     except Exception as e:
         return {"post_id": "", "permalink": "", "status": "error", "error": f"Instagram posting failed: {str(e)}"}

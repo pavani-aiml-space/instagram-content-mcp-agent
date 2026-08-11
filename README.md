@@ -92,7 +92,7 @@ The backend spawns `mcp_server/instagram_tools_server.py` as a subprocess automa
 ## Project structure
 
 ```
-agents/       Multi-agent orchestration (LangGraph coordinator + 3 tool-calling agents)
+agents/       Multi-agent orchestration (LCEL coordinator + 3 tool-calling agents)
 mcp_server/   The real MCP server exposing generate_content / generate_image / post_to_instagram
 tools/        Tool implementations wrapped by the MCP server
 backend/      FastAPI app, routes, Pydantic request/response models

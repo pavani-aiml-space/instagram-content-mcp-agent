@@ -6,7 +6,7 @@ const FORMATS = [
   { value: '', label: 'Auto' },
   { value: 'post', label: 'Post' },
   { value: 'story', label: 'Story' },
-  { value: 'reel', label: 'Reel' },
+  { value: 'reel', label: 'Reel', disabled: true, title: 'Not supported yet: Reels need a video and this pipeline only generates images.' },
 ];
 
 const STEP_LABELS = {
@@ -118,7 +118,7 @@ export default function ContentForm() {
     try {
       const response = await createUser({ username, instagramUserId: username });
       setFormData((prev) => ({ ...prev, user_id: username }));
-      setUserMessage({ ok: true, text: `${response.message} — using User ID "${username}".` });
+      setUserMessage({ ok: true, text: `${response.message}, using User ID "${username}".` });
     } catch (err) {
       setUserMessage({ ok: false, text: err.message || 'Failed to create user.' });
     } finally {
@@ -154,7 +154,7 @@ export default function ContentForm() {
               name="topic_details"
               value={formData.topic_details}
               onChange={handleChange}
-              placeholder="Add context or specific points to cover — helps generate more accurate content and imagery."
+              placeholder="Add context or specific points to cover: helps generate more accurate content and imagery."
               rows="3"
             />
           </div>
@@ -170,6 +170,8 @@ export default function ContentForm() {
                   aria-checked={formData.format === f.value}
                   className={formData.format === f.value ? 'segmented-option active' : 'segmented-option'}
                   onClick={() => setFormData((prev) => ({ ...prev, format: f.value }))}
+                  disabled={f.disabled}
+                  title={f.title}
                 >
                   {f.label}
                 </button>
@@ -220,7 +222,7 @@ export default function ContentForm() {
             <span className="switch-label">
               <strong>Dry run</strong>
               <span className="switch-sublabel">
-                {dryRun ? "Won't publish to Instagram — safe for testing the pipeline." : 'Will publish live to Instagram.'}
+                {dryRun ? "Won't publish to Instagram, safe for testing the pipeline." : 'Will publish live to Instagram.'}
               </span>
             </span>
           </label>

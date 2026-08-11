@@ -198,6 +198,7 @@ def create_coordinator_chain(tools: Dict[str, BaseTool]):
             instagram_account_id=state["instagram_account_id"],
             tool=tools["post_to_instagram"],
             dry_run=state.get("dry_run", False),
+            format=state.get("format", "post"),
         )
         if result["status"] == "error":
             raise RuntimeError(result.get("error", "Instagram posting failed"))

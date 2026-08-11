@@ -15,7 +15,7 @@ function App() {
           </div>
           <div className="app-titles">
             <h1>Instagram Content Generator</h1>
-            <p>AI captions, images, and posting — powered by a multi-agent MCP pipeline</p>
+            <p>AI captions, images, and posting, powered by a multi-agent MCP pipeline</p>
           </div>
         </div>
       </header>

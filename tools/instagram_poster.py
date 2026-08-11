@@ -42,6 +42,7 @@ class InstagramPoster:
         caption: str,
         instagram_account_id: str,
         dry_run: bool = False,
+        media_type: Optional[str] = None,
     ) -> Dict[str, str]:
         """
         Post image with caption to Instagram
@@ -52,6 +53,12 @@ class InstagramPoster:
             instagram_account_id: Instagram Business Account ID
             dry_run: If True, validates inputs and logs what would be posted without
                 calling the real Graph API.
+            media_type: Graph API media_type for the container, e.g. "STORIES". Leave
+                None for a plain feed post. "REELS" is intentionally not accepted here:
+                the Graph API requires REELS containers to carry a video_url, and this
+                poster only ever receives a static image_url, so a caller must not
+                pass "REELS" (see post_to_instagram in mcp_server, which rejects it
+                before this method is called).
 
         Returns:
             {
@@ -88,9 +95,10 @@ class InstagramPoster:
         try:
             # Step 1: Create media container
             container_response = self._create_media_container(
-                image_url, 
-                caption, 
-                instagram_account_id
+                image_url,
+                caption,
+                instagram_account_id,
+                media_type=media_type,
             )
             
             logger.info(f"📦 Media container response: {container_response}")
@@ -134,7 +142,13 @@ class InstagramPoster:
             logger.error(f"❌ Error in post_image: {str(e)}")
             raise Exception(f"Error posting to Instagram: {str(e)}")
     
-    def _create_media_container(self, image_url: str, caption: str, instagram_account_id: str) -> Dict:
+    def _create_media_container(
+        self,
+        image_url: str,
+        caption: str,
+        instagram_account_id: str,
+        media_type: Optional[str] = None,
+    ) -> Dict:
         """
         Step 1: Create media container (upload image)
         """
@@ -170,7 +184,9 @@ class InstagramPoster:
             "caption": caption,
             "access_token": self.access_token
         }
-        
+        if media_type:
+            params["media_type"] = media_type
+
         logger.info(f"📡 Sending request to Instagram Graph API: {url}")
         logger.info(f"📋 Request params: image_url={image_url[:50]}..., caption length={len(caption)}")
         

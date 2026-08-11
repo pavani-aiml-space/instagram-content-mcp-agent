@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>How Instagram Content MCP Agent works</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --paper: #14101f; --paper-raised: #1e1830; --ink: #ece8f7; --ink-secondary: #b3a9cf;
+    --ink-muted: #83789f; --line: #322a49; --line-soft: #251f38; --brand: #a985ff;
+    --brand-ink: #cbb4ff; --brand-bg: #241a3d; --brand-2: #ff8dc1; --warn: #e0ac52; --warn-ink: #f6ddb0;
+    --warn-bg: #3a2c14; --ok: #6fbf93; --ok-ink: #cdead9; --ok-bg: #1e3327;
+    --shadow: 0 1px 2px rgba(0,0,0,0.2), 0 6px 20px rgba(0,0,0,0.28);
+    --shadow-lift: 0 2px 4px rgba(0,0,0,0.25), 0 12px 28px rgba(169,133,255,0.22);
+    --font-display: Charter, Georgia, Cambria, "Times New Roman", serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--font-body); line-height: 1.55; font-size: 15.5px; margin: 0; }
+  .sheet { max-width: 780px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+  .hero { position: relative; margin: -0.4rem -1.5rem 0.6rem; padding: 1.8rem 1.5rem 1.9rem; border-radius: 16px; overflow: hidden;
+    background: radial-gradient(120% 160% at 12% -10%, var(--brand-bg) 0%, transparent 55%), var(--paper); }
+  .hero::before { content: ""; position: absolute; top: -40%; right: -18%; width: 260px; height: 260px; border-radius: 50%;
+    background: radial-gradient(closest-side, var(--brand-2) 0%, transparent 72%); opacity: 0.28; filter: blur(2px); pointer-events: none; }
+  .eyebrow { position: relative; display: inline-flex; align-items: center; gap: 0.4em; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brand-ink); font-weight: 600; }
+  .eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 3px var(--brand-bg); }
+  h1 { position: relative; font-family: var(--font-display); font-weight: 400; font-size: clamp(30px, 6vw, 40px); line-height: 1.1; margin: 0.35em 0 0.4em;
+    background: linear-gradient(100deg, var(--ink) 30%, var(--brand-ink) 65%, var(--brand-2) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .thesis { position: relative; font-size: 16px; color: var(--ink-secondary); max-width: 62ch; margin: 0; }
+  .thesis q, .thesis .quote { color: var(--ink); font-style: italic; }
+  .thesis + .thesis { margin-top: 0.7rem; }
+  p { max-width: 68ch; color: var(--ink-secondary); margin: 0.5rem 0; }
+  a { color: var(--brand-ink); }
+  code { font-family: var(--font-mono); font-size: 0.92em; }
+  ul.tight { padding-left: 1.1rem; margin: 0.4rem 0; }
+  ul.tight li { color: var(--ink-secondary); margin-bottom: 0.3rem; }
+  .stamp { display: inline-block; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; padding: 0.18em 0.5em; border: 1px solid currentColor; border-radius: 3px; white-space: nowrap; }
+  .stamp.fact { color: var(--ok-ink); background: var(--ok-bg); border-color: var(--ok); }
+  .stamp.ai { color: var(--brand-ink); background: var(--brand-bg); border-color: var(--brand); }
+  .stamp.warn { color: var(--warn-ink); background: var(--warn-bg); border-color: var(--warn); }
+  .pipeline { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.5rem; margin: 0.8rem 0; }
+  .pipeline-step { flex: 1 1 140px; padding: 0.55rem 0.65rem 0.55rem 0.55rem; background: var(--paper-raised); border: 1px solid var(--line); border-left: 3px solid var(--brand);
+    border-radius: 7px; font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-secondary); box-shadow: var(--shadow); transition: transform 0.15s ease, box-shadow 0.15s ease; }
+  .pipeline-step:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
+  .pipeline-step .num { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 4px; margin-right: 0.3em;
+    background: var(--brand); color: #fff; border-radius: 5px; font-weight: 700; font-size: 10px; }
+  .pipeline-arrow { display: flex; align-items: center; color: var(--brand); font-size: 15px; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; margin: 0.6rem 0 1.2rem; font-size: 13.5px; }
+  th, td { text-align: left; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  th { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-muted); font-weight: 500; }
+  tr.group-head td { padding-top: 0.9rem; font-weight: 600; color: var(--ink); border-bottom: none; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .table-scroll { overflow-x: auto; }
+  pre { background: var(--paper-raised); border: 1px solid var(--line); border-radius: 4px; padding: 0.75rem 0.9rem; overflow-x: auto; font-size: 12.5px; margin: 0.6rem 0; }
+  .footer { margin-top: 3rem; padding-top: 1.2rem; border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-muted); }
+
+  details.block { border-top: 1px solid var(--line); }
+  details.block:first-of-type { border-top: none; }
+  details.block > summary { cursor: pointer; list-style: none; padding: 1.5rem 0.8rem; margin: 0 -0.8rem; border-radius: 10px;
+    display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; transition: background 0.15s ease, box-shadow 0.15s ease; border-left: 3px solid transparent; }
+  details.block > summary::-webkit-details-marker { display: none; }
+  details.block > summary::marker { content: ""; }
+  details.block > summary:hover { background: var(--brand-bg); border-left-color: var(--brand); }
+  details.block[open] > summary { background: var(--brand-bg); border-left-color: var(--brand); box-shadow: var(--shadow); }
+  details.block > summary .label { font-family: var(--font-body); font-weight: 700; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink); transition: color 0.15s ease; }
+  details.block > summary:hover .label, details.block[open] > summary .label { color: var(--brand-ink); }
+  details.block > summary .chevron { font-family: var(--font-mono); color: var(--brand); font-size: 16px; font-weight: 700; transition: transform 0.15s ease; flex-shrink: 0; }
+  details.block[open] > summary .chevron { transform: rotate(90deg); }
+  details.block > summary .hint { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-muted); text-transform: none; letter-spacing: 0; margin-left: auto; margin-right: 0.6rem; }
+  details.block > .block-body { padding: 0.4rem 0.2rem 2rem; }
+
+  details.subblock { margin: 1.1rem 0; border: 1px solid var(--line); border-radius: 9px; background: var(--paper-raised); box-shadow: var(--shadow); transition: box-shadow 0.15s ease, transform 0.15s ease; }
+  details.subblock:hover { box-shadow: var(--shadow-lift); transform: translateY(-1px); }
+  details.subblock[open] { border-color: var(--brand); }
+  details.subblock > summary { cursor: pointer; list-style: none; padding: 0.75rem 1rem; margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; font-weight: 600; color: var(--ink); font-size: 14.5px; }
+  details.subblock > summary::-webkit-details-marker { display: none; }
+  details.subblock > summary::marker { content: ""; }
+  details.subblock > summary:hover { color: var(--brand-ink); }
+  details.subblock > summary .chevron { font-family: var(--font-mono); color: var(--brand); font-size: 13px; font-weight: 700; transition: transform 0.15s ease; flex-shrink: 0; }
+  details.subblock[open] > summary .chevron { transform: rotate(90deg); }
+  details.subblock > .subblock-body { padding: 0 1rem 1rem; }
+  details.subblock + details.subblock { margin-top: 0.7rem; }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="hero">
+    <span class="eyebrow">How it works</span>
+    <h1>Instagram Content MCP Agent</h1>
+    <p class="thesis">A solo creator wants to post about <span class="quote">"Embeddings"</span> tonight, explained properly, not as a Wikipedia stub. That means a caption, an image that isn't a diagram, and both live on Instagram before the moment passes.</p>
+    <p class="thesis">Three chores, three failure modes: an LLM that rambles, an image model that returns a cluttered infographic, a two-step Graph API upload that fails silently if the image isn't public yet. Doing this by hand every time is what kills the habit.</p>
+    <p class="thesis">One pipeline turns a topic into a live post: an LLM writes the caption, an image model generates the visual, an MCP server exposes both plus the Graph API call as tools a LangChain coordinator calls in sequence, retrying automatically on each step.</p>
+  </div>
+
+  <details class="block">
+    <summary><span class="label">Requirements &amp; how we measure them</span><span class="chevron">&rsaquo;</span></summary>
+    <div class="block-body">
+    <div class="table-scroll">
+    <table>
+      <tr><th>Requirement</th><th>Why it matters</th><th>Metric</th><th>How it's calculated</th><th>Status</th></tr>
+      <tr class="group-head"><td colspan="5">Functional</td></tr>
+      <tr><td>Generate a caption, bullets, and hashtags from a topic</td><td>The caption is what earns the read/save/share, not a text dump about the topic</td><td>Structured-output compliance</td><td><code>ChatOpenAI(model="gpt-4o-mini", temperature=0.7, max_tokens=1500).with_structured_output(ContentSchema)</code> forces typed <code>caption</code>/<code>bullets</code>/<code>steps</code>/<code>hashtags</code> fields instead of manual text parsing. The topic is auto-classified as a recipe by matching it (plus any topic details) against a fixed list of ~20 food keywords, which switches both the prompt and the caption assembly (<code>Ingredients:</code>/<code>Recipe:</code> headings vs. plain bullets and numbered steps).</td><td><span class="stamp fact">Verified</span> tools/content_generator.py</td></tr>
+      <tr><td>Generate a photographic (non-infographic) image for the topic</td><td>An Instagram post with a diagram-looking image reads as a slide, not a photo</td><td>Provider success / fallback tier reached</td><td>Stability AI (<code>stable-diffusion-xl-1024-v1-0</code>, <code>cfg_scale=8</code>, <code>steps=40</code>, <code>style_preset="photographic"</code>) is the default provider (<code>IMAGE_PROVIDER</code> env), with a negative prompt that explicitly excludes "infographic, diagram, flowchart... numbered steps layout". An OpenAI-provider config tries <code>gpt-image-1</code> then falls back to <code>dall-e-3</code>, then to Stability if a key is configured. If every provider call raises, a local PIL-rendered "Image unavailable" placeholder is generated instead and the run continues with <code>is_placeholder: true</code>.</td><td><span class="stamp fact">Verified</span> tools/image_generator.py</td></tr>
+      <tr><td>Publish the image + caption to Instagram</td><td>Generating content nobody sees isn't the job</td><td>Post published or dry-run validated</td><td>Two sequential Graph API v18.0 calls: <code>POST /{account}/media</code> (image_url + caption) creates a container, then a hard-coded 2-second sleep, then <code>POST /{account}/media_publish</code> with the returned <code>creation_id</code>. Before either call, the poster fetches <code>image_url</code> itself (HEAD, then GET if that isn't 200) to confirm it's publicly reachable and rejects any <code>file://</code> URL outright. <code>dry_run=true</code> (per-request or via a <code>DRY_RUN</code> env var) short-circuits before any Graph API call and returns a synthetic <code>DRYRUN-&lt;uuid&gt;</code> post ID.</td><td><span class="stamp fact">Verified</span> tools/instagram_poster.py</td></tr>
+      <tr><td>Post format (post / story / reel) matches what's actually published</td><td>Choosing "Story" in the UI should not silently post a plain feed image, and choosing "Reel" for a pipeline that only produces a static image should not silently mislabel the result</td><td><code>media_type</code> sent to the Graph API</td><td>The <code>post_to_instagram</code> MCP tool maps <code>format</code> to the Graph API's actual <code>media_type</code> field: <code>"post"</code> omits <code>media_type</code> (a plain feed post), <code>"story"</code> sends <code>media_type=STORIES</code> on the container-create call. <code>"reel"</code> is rejected outright, before any Graph API call, with a clear error, because a REELS container needs a <code>video_url</code> and this pipeline only ever generates a static PNG. The frontend disables the "Reel" option in the format picker to match. (Previously <code>format</code> only changed the content-generation prompt and the saved DB row; <code>post_to_instagram</code> never set <code>media_type</code> at all, so selecting "Story" silently created a plain feed post.)</td><td><span class="stamp fact">Verified</span> mcp_server/instagram_tools_server.py, tools/instagram_poster.py</td></tr>
+      <tr class="group-head"><td colspan="5">Non-functional</td></tr>
+      <tr><td>Resilience to transient API failures</td><td>OpenAI, Stability, and the Graph API all fail transiently under normal use</td><td>Retry count / backoff strategy</td><td>Each of the 3 pipeline steps is wrapped in <code>RunnableLambda(...).with_retry(stop_after_attempt=2, wait_exponential_jitter=True)</code> (<code>agents/coordinator_agent.py</code>) - exactly one retry (2 total attempts) with exponential backoff and jitter before the step is recorded as failed. Capped at 2 attempts deliberately, since each attempt is a billed call to OpenAI, Stability, or Instagram.</td><td><span class="stamp fact">Verified</span> agents/coordinator_agent.py</td></tr>
+      <tr><td>Run visibility while the pipeline executes</td><td>A 3-step, multi-second pipeline needs feedback, not a spinner</td><td>Progress log entries emitted</td><td>Each coordinator step appends a <code>{step, agent, status, message}</code> dict to <code>state["progress_log"]</code> at "starting" and "completed"/"error"; the API response returns the full list for the frontend's stepper UI. The list is not written to the database, so a completed request's step-by-step history isn't queryable afterward.</td><td><span class="stamp warn">Partial</span> live during a request, not persisted</td></tr>
+      <tr><td>No accidental live posting during development</td><td>A dev running the pipeline repeatedly shouldn't spam a real Instagram account</td><td>Dry-run enforcement point</td><td><code>effective_dry_run = dry_run OR DRY_RUN env truthy</code> is computed inside the <code>post_to_instagram</code> MCP tool itself, not just the API layer, so it holds regardless of caller. The frontend's dry-run toggle also defaults to <code>true</code> on page load (<code>ContentForm.jsx</code>).</td><td><span class="stamp fact">Verified</span> mcp_server/instagram_tools_server.py, frontend/src/components/ContentForm.jsx</td></tr>
+    </table>
+    </div>
+    </div>
+  </details>
+
+  <details class="block">
+    <summary><span class="label">Solution: end-to-end flow</span><span class="chevron">&rsaquo;</span></summary>
+    <div class="block-body">
+    <div class="pipeline">
+      <div class="pipeline-step"><span class="num">01</span> Frontend request</div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step"><span class="num">02</span> FastAPI route + user lookup</div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step"><span class="num">03</span> MCP session opens</div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step"><span class="num">04</span> generate_content</div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step"><span class="num">05</span> generate_image</div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step"><span class="num">06</span> post_to_instagram</div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step"><span class="num">07</span> Persist + respond</div>
+    </div>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Step</th><th>What happens</th></tr>
+      <tr><td>01 Frontend request</td><td>The React form (<code>ContentForm.jsx</code>) POSTs topic, optional topic details/format, a user ID, and a dry-run flag to <code>/api/content/generate-and-post</code>.</td></tr>
+      <tr><td>02 FastAPI route + user lookup</td><td><code>backend/routes/content.py</code> looks the user up by ID or Instagram user ID, reads <code>INSTAGRAM_ACCOUNT_ID</code> from the environment, and hands off to <code>run_coordinator()</code>.</td></tr>
+      <tr><td>03 MCP session opens</td><td><code>agents/mcp_client.py</code> spawns <code>mcp_server/instagram_tools_server.py</code> as a stdio subprocess and loads its 3 tools once, for the whole run, via <code>langchain-mcp-adapters</code>.</td></tr>
+      <tr><td>04 generate_content</td><td>The Content Creator Agent calls the <code>generate_content</code> MCP tool, which runs <code>ContentGenerator</code> (gpt-4o-mini, structured output) and returns caption/bullets/hashtags; retried once on failure.</td></tr>
+      <tr><td>05 generate_image</td><td>The Image Generator Agent calls <code>generate_image</code>, which runs <code>ImageGenerator</code> (Stability AI by default, with an OpenAI alternative and a placeholder-image last resort), saves a PNG to <code>assets/</code>, and returns its public URL; retried once.</td></tr>
+      <tr><td>06 post_to_instagram</td><td>The Instagram Poster Agent calls <code>post_to_instagram</code>, which maps <code>format</code> to a Graph API <code>media_type</code>, creates a media container, waits 2 seconds, and publishes it via Graph API v18.0 (or returns a dry-run stub); retried once.</td></tr>
+      <tr><td>07 Persist + respond</td><td>The route writes a <code>ContentRequest</code> and <code>Post</code> row to Postgres via SQLAlchemy, then returns the post ID, image URL, and full progress log to the frontend.</td></tr>
+    </table>
+    </div>
+    <p>See the <a href="../README.md">README's Architecture section</a> for the component-level picture (frontend, FastAPI backend, MCP server, Postgres).</p>
+    </div>
+  </details>
+
+  <details class="block">
+    <summary><span class="label">Key trade-offs</span><span class="chevron">&rsaquo;</span></summary>
+    <div class="block-body">
+    <ul class="tight">
+      <li><strong>LCEL over LangGraph:</strong> the coordinator is a plain <code>RunnableLambda | RunnableLambda | RunnableLambda</code> sequence, not a graph, because the flow never branches or cycles. The cost: there's no built-in support for running content and image generation in parallel, or for adding a human-approval branch later, without an actual rewrite onto a graph framework.</li>
+      <li><strong>Placeholder image on total provider failure:</strong> when every image provider call raises, the pipeline substitutes a local "Image unavailable" PNG and still completes the run rather than failing it. That trades correctness for availability: a broken image API can result in an actually-published Instagram post with the wrong picture, instead of a visibly failed request.</li>
+      <li><strong>Reels are rejected, not attempted:</strong> <code>post_to_instagram</code> maps <code>format</code> to the Graph API's <code>media_type</code> (<code>STORIES</code> for stories, omitted for a plain post), but a <code>reel</code> request returns an explicit error instead of publishing an image under the Reels label, because a REELS container needs a real <code>video_url</code> and this pipeline never generates video. The cost: the app genuinely cannot fulfill a "Reel" request right now, a real capability gap, not just a labeling detail, and the frontend has to disable that option rather than offer it and fail.</li>
+      <li><strong>A fresh MCP subprocess per request:</strong> <code>run_coordinator()</code> opens a new <code>stdio_client</code> session (and spawns <code>mcp_server/instagram_tools_server.py</code> fresh) on every API call, rather than keeping one long-lived MCP server process. That keeps the client/server boundary genuinely real instead of simulated, at the cost of a subprocess spin-up and re-importing every tool's dependencies on each request.</li>
+    </ul>
+    </div>
+  </details>
+
+  <details class="block">
+    <summary><span class="label">Reflections</span><span class="chevron">&rsaquo;</span></summary>
+    <div class="block-body">
+
+    <details class="subblock">
+      <summary>Orchestration: LangGraph state graph, then plain LCEL<span class="chevron">&rsaquo;</span></summary>
+      <div class="subblock-body">
+      <ul class="tight">
+        <li>Started with a LangGraph-style design: <code>requirements.txt</code> still carries <code>langgraph</code> as a dependency with a comment noting it "isn't imported by the app anymore," and the older docs (<code>docs/MULTI_AGENT_ARCHITECTURE.md</code>, <code>docs/CODE_OVERVIEW.md</code>) still describe a per-agent state dict and list "LangGraph - Agent workflow" as a core technology.</li>
+        <li>Stepped back because the workflow never branches or cycles: it is content, then image, then post, every single time. Graph nodes and edges were pure ceremony for what is actually a straight line.</li>
+        <li>Landed on a LangChain Expression Language <code>RunnableSequence</code> (the <code>|</code> operator) instead. It expresses the linear chain directly, and as a real bonus each step got <code>.with_retry()</code> for free, something the graph-based version never had.</li>
+      </ul>
+      </div>
+    </details>
+
+    <details class="subblock">
+      <summary>Content generation: manual text parsing, then structured output<span class="chevron">&rsaquo;</span></summary>
+      <div class="subblock-body">
+      <ul class="tight">
+        <li>Started with a raw <code>ChatOpenAI</code> call and manual text parsing, splitting the model's response on markdown bullets and section headers to pull out the caption, ingredients, and steps (per <code>tools/content_generator.py</code>'s own module docstring).</li>
+        <li>Stepped back because that parsing broke whenever the model's formatting drifted: an extra intro sentence, a different bullet marker, a missing header, and the split logic would silently mis-parse the caption.</li>
+        <li>Landed on <code>ChatOpenAI(...).with_structured_output(ContentSchema)</code>: caption, bullets, steps, and hashtags come back as typed, Pydantic-validated fields, so the model has to fill in the shape rather than the code guessing at it after the fact.</li>
+      </ul>
+      </div>
+    </details>
+
+    <details class="subblock">
+      <summary>Image generation: fail the pipeline, then degrade gracefully<span class="chevron">&rsaquo;</span></summary>
+      <div class="subblock-body">
+      <ul class="tight">
+        <li>Started from a single provider call that simply raised on failure, which meant one flaky Stability AI response threw away the already-completed, already-billed content-generation step and blocked a post that was otherwise ready to go.</li>
+        <li>Stepped back because "no post" felt like the wrong failure mode for something as replaceable as one image, especially once a retry had already been tried and failed.</li>
+        <li>Landed on a three-tier fallback: primary provider, then a secondary provider if one is configured, then a locally rendered placeholder image so the run still completes. This is a genuine trade-off, not a free win (see Key trade-offs): it exchanges a visible failure for a post that goes out looking wrong.</li>
+      </ul>
+      </div>
+    </details>
+
+    <details class="subblock">
+      <summary>Prompting: one generic template, then topic-aware routing<span class="chevron">&rsaquo;</span></summary>
+      <div class="subblock-body">
+      <ul class="tight">
+        <li>Started wanting a single prompt template that worked for any topic, whether it was "Embeddings" or "Ragi Dosa Recipe" (both real example topics from the codebase).</li>
+        <li>Stepped back because a recipe and a technical topic need genuinely different caption structure: ingredients plus numbered steps versus a hook plus explained bullets. One template produced a generically-shaped result for both.</li>
+        <li>Landed on <code>_is_recipe_topic()</code>: a keyword match against the topic and topic details routes to one of two prompts and system messages, and <code>_assemble_caption()</code> formats the result differently (<code>Ingredients:</code>/<code>Recipe:</code> headings for food, plain bullets and numbered steps otherwise).</li>
+      </ul>
+      </div>
+    </details>
+
+    </div>
+  </details>
+
+  <details class="block">
+    <summary><span class="label">Run it</span><span class="chevron">&rsaquo;</span></summary>
+    <div class="block-body">
+    <p>Content generation defaults to OpenAI's <code>gpt-4o-mini</code>; image generation defaults to Stability AI's <code>stable-diffusion-xl-1024-v1-0</code> (set <code>IMAGE_PROVIDER=openai</code> to switch). Instagram requires the generated image at a public HTTPS URL, so a tunnel (ngrok) is needed for the poster step to succeed outside dry-run mode. That URL is only known after the tunnel starts, so <code>PUBLIC_IMAGE_SERVER_URL</code> gets added to <code>.env</code> after the ngrok step below, not before it. Requires Python 3.10+ (the <code>mcp</code> package's actual floor, per its published metadata; nothing in <code>requirements.txt</code> states this explicitly) and Node 20.19+/22.12+ (Vite 7's minimum, per <code>frontend/package.json</code>'s <code>vite: ^7.2.2</code>); both <code>pip install -r requirements.txt</code> and <code>npm install</code> were run against the actual manifests in this repo to confirm a clean install.</p>
+<pre>git clone &lt;repo url&gt;
+cd instagram-content-mcp-agent
+python3 -m venv venv &amp;&amp; source venv/bin/activate
+pip install -r requirements.txt
+
+# create .env in the project root with:
+#   OPENAI_API_KEY, STABILITY_API_KEY,
+#   INSTAGRAM_ACCESS_TOKEN, INSTAGRAM_ACCOUNT_ID, DATABASE_URL
+
+python scripts/setup_database.py
+scripts/start_image_server_and_ngrok.sh   # prints a public ngrok URL
+
+# add that URL to .env as PUBLIC_IMAGE_SERVER_URL, then:
+uvicorn backend.main:app --reload         # http://localhost:8000/docs
+
+cd frontend &amp;&amp; npm install &amp;&amp; npm run dev  # http://localhost:5173</pre>
+    <p>Dry-run mode (on by default in the frontend) skips the two real Graph API calls, but it doesn't skip the tunnel requirement: <code>InstagramPoster.post_image</code> rejects a <code>file://</code> image URL before it ever checks <code>dry_run</code>, so without <code>PUBLIC_IMAGE_SERVER_URL</code> set the pipeline still fails at the posting step, just with a local validation error instead of a real Instagram API call.</p>
+    </div>
+  </details>
+
+  <div class="footer">Instagram Content MCP Agent</div>
+
+</div>
+</body>
+</html>

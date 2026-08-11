@@ -88,12 +88,21 @@ def generate_image(
         return {"status": "error", "error": str(e)}
 
 
+# Maps the app's "format" concept to the Graph API's actual "media_type" field.
+# None means "omit media_type", which the Graph API treats as a plain feed post.
+_FORMAT_TO_MEDIA_TYPE = {
+    "post": None,
+    "story": "STORIES",
+}
+
+
 @mcp.tool()
 def post_to_instagram(
     image_url: str,
     caption: str,
     instagram_account_id: str,
     dry_run: bool = False,
+    format: str = "post",
 ) -> dict[str, Any]:
     """
     Post an image with a caption to Instagram using the Graph API.
@@ -106,11 +115,36 @@ def post_to_instagram(
             publishing to the real Instagram account. A DRY_RUN env var set to
             "true"/"1"/"yes" forces this on regardless of the request, as a
             deployment-wide safety net.
+        format: "post" (default) or "story". Mapped to the Graph API's media_type
+            field: "post" omits media_type (a plain feed post), "story" sends
+            media_type=STORIES. "reel" is rejected: the Graph API requires a
+            REELS container to carry a video_url, and this pipeline only ever
+            generates a static image, so there is no video to post - accepting
+            "reel" here would silently publish a plain feed image under the
+            Reel label instead.
 
     Returns:
         dict with "post_id" and "permalink" on success, or "status"/"error" on failure.
     """
     effective_dry_run = dry_run or os.getenv("DRY_RUN", "false").lower() in ("1", "true", "yes")
+
+    normalized_format = (format or "post").lower()
+    if normalized_format == "reel":
+        return {
+            "status": "error",
+            "error": (
+                "format='reel' is not supported: Instagram Reels require a video "
+                "(media_type=REELS with a video_url), and this pipeline only "
+                "generates a static image. Use 'post' or 'story' instead."
+            ),
+        }
+    if normalized_format not in _FORMAT_TO_MEDIA_TYPE:
+        return {
+            "status": "error",
+            "error": f"Unknown format '{format}'. Expected 'post' or 'story'.",
+        }
+    media_type = _FORMAT_TO_MEDIA_TYPE[normalized_format]
+
     try:
         poster = InstagramPoster()
         result = poster.post_image(
@@ -118,6 +152,7 @@ def post_to_instagram(
             caption=caption,
             instagram_account_id=instagram_account_id,
             dry_run=effective_dry_run,
+            media_type=media_type,
         )
         return {
             "post_id": result["post_id"],
